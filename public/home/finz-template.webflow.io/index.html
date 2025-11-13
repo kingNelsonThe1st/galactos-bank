@@ -1528,5 +1528,32 @@ flexible loans, and comprehensive banking services into one seamless experience.
       window.parent.postMessage({ type: 'navigate', path: '/signup' }, '*');
     }
   </script>
+  <script>
+  // Listen for language changes from parent
+  window.addEventListener('message', function(event) {
+    if (event.data.type === 'languageChange') {
+      const lang = event.data.language;
+      
+      // Reload Google Translate for iframe content
+      if (window.google && window.google.translate) {
+        var translate = new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,es,fr,de,zh,ar,pt',
+          layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+        });
+        
+        // Change language
+        setTimeout(() => {
+          var select = document.querySelector('.goog-te-combo');
+          if (select) {
+            select.value = lang;
+            select.dispatchEvent(new Event('change'));
+          }
+        }, 100);
+      }
+    }
+  });
+</script>
+
  </body>
 </html>

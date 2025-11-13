@@ -8,7 +8,7 @@ import { randomBytes } from "crypto";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, password, phone, country, pin } = body;
+    const { name, email, password, confirm, phone, country, pin } = body;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
         name,
         email,
         password: hashedPassword,
+        confirm,
         phone: phone || null,
         country: country || null,
         pin: hashedPin,

@@ -203,7 +203,7 @@ html.w-mod-touch * {
 .foot img {
   width: 100%;
   object-fit: cover;
-  transform: scale(1.8);
+  transform: scale(1.2);
 }
 
 .w-clearfix:before, .w-clearfix:after {
@@ -1517,7 +1517,7 @@ textarea.w-input, textarea.w-select {
 .w-nav-brand img {
   width: 100%;
   object-fit: cover;
-  transform: scale(1.8);
+  transform: scale(1.4);
 }
 
 .w-nav-link {

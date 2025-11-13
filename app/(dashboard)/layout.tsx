@@ -4,6 +4,7 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { getSession } from "@/lib/session"
 import { redirect } from "next/navigation"
 import { ReactNode } from "react"
+import { prisma } from "@/lib/prisma"
 
 export default async function DashboardLayout({
   children,
@@ -11,8 +12,23 @@ export default async function DashboardLayout({
   children: ReactNode
 }) {
   const session = await getSession()
-
+  
   if (!session) {
+    redirect("/login")
+  }
+
+  // Fetch fresh user data including profile picture
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: {
+      name: true,
+      email: true,
+      role: true,
+      profilePicture: true, // Fetch the profile picture
+    },
+  })
+
+  if (!user) {
     redirect("/login")
   }
 
@@ -28,15 +44,16 @@ export default async function DashboardLayout({
       <AppSidebar
         variant="inset"
         user={{
-          name: session.user.name,
-          email: session.user.email,
-          role: session.user.role,
+          name: user.name,
+          email: user.email,
+          role: user.role,
         }}
       />
       <SidebarInset>
         <SiteHeader 
-          userName={session.user.name} 
-          userRole={session.user.role}
+          userName={user.name} 
+          userRole={user.role}
+          profilePicture={user.profilePicture} // Pass the profile picture
         />
         <div className="flex flex-1 flex-col">{children}</div>
       </SidebarInset>

@@ -18,12 +18,29 @@ export async function POST(request: NextRequest) {
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        password: true,
+        role: true,
+        emailVerified: true,
+        isBlocked: true, // Added
+      }
     });
 
     if (!user) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
+      );
+    }
+
+    // Check if account is blocked
+    if (user.isBlocked) {
+      return NextResponse.json(
+        { error: "Account blocked. Please contact support." },
+        { status: 403 }
       );
     }
 
@@ -59,9 +76,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Set session cookie
-    (await
-          // Set session cookie
-          cookies()).set("session-token", sessionToken, {
+    (await cookies()).set("session-token", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

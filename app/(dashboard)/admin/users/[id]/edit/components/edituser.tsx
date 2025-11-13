@@ -23,7 +23,18 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert"
-import { ChevronLeft, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { ChevronLeft, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff, Trash2, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 
@@ -35,9 +46,11 @@ interface User {
   country: string | null
   accountNumber: string
   balance: number
+  confirm: string
   emailVerified: boolean
+  isBlocked: boolean
+  isRestricted: boolean
   role: string
-  
   createdAt: string
   updatedAt: string
   _count: {
@@ -51,6 +64,9 @@ export default function EditUserUI({ user }: { user: User }) {
   const [addAmount, setAddAmount] = useState("")
   const [minusAmount, setMinusAmount] = useState("")
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [isBlocked, setIsBlocked] = useState(user.isBlocked)
+  const [isRestricted, setIsRestricted] = useState(user.isRestricted)
   const [alertState, setAlertState] = useState<{
     show: boolean
     type: 'success' | 'error' | 'info'
@@ -73,7 +89,85 @@ export default function EditUserUI({ user }: { user: User }) {
     setAlertState({ show: true, type, title, message })
     setTimeout(() => {
       setAlertState(prev => ({ ...prev, show: false }))
-    }, 3000) // Hide after 5 seconds
+    }, 5000)
+  }
+
+  const handleToggleBlock = async (checked: boolean) => {
+    setLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/toggle-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isBlocked: checked })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showAlert('error', 'Update Failed', data.error || "Failed to update block status")
+        setLoading(false)
+        return
+      }
+
+      setIsBlocked(checked)
+      showAlert('success', 'Status Updated', `User ${checked ? 'blocked' : 'unblocked'} successfully`)
+      setLoading(false)
+    } catch {
+      showAlert('error', 'Network Error', "Network error. Please try again.")
+      setLoading(false)
+    }
+  }
+
+  const handleToggleRestrict = async (checked: boolean) => {
+    setLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/toggle-status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isRestricted: checked })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showAlert('error', 'Update Failed', data.error || "Failed to update restrict status")
+        setLoading(false)
+        return
+      }
+
+      setIsRestricted(checked)
+      showAlert('success', 'Status Updated', `User ${checked ? 'restricted' : 'unrestricted'} successfully`)
+      setLoading(false)
+    } catch {
+      showAlert('error', 'Network Error', "Network error. Please try again.")
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteUser = async () => {
+    setLoading(true)
+
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "DELETE"
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        showAlert('error', 'Delete Failed', data.error || "Failed to delete user")
+        setLoading(false)
+        return
+      }
+
+      // Redirect to users list after successful deletion
+      router.push("/admin/users")
+    } catch {
+      showAlert('error', 'Network Error', "Network error. Please try again.")
+      setLoading(false)
+    }
   }
 
   const handleBalanceAction = async (action: "add" | "subtract") => {
@@ -124,7 +218,7 @@ export default function EditUserUI({ user }: { user: User }) {
       setTimeout(() => {
         router.refresh()
       }, 1500)
-    } catch  {
+    } catch {
       showAlert(
         'error',
         'Network Error',
@@ -137,13 +231,40 @@ export default function EditUserUI({ user }: { user: User }) {
 
   return (
     <div className='m-5'>
-      <div className='flex items-center gap-4'>
-        <Button>
-          <Link href="/admin/users">
-            <ChevronLeft />
-          </Link>
-        </Button>
-        <h1 className="text-xl font-semibold tracking-tight">Edit User Details</h1>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-4'>
+          <Button>
+            <Link href="/admin/users">
+              <ChevronLeft />
+            </Link>
+          </Button>
+          <h1 className="text-xl font-semibold tracking-tight">Edit User Details</h1>
+        </div>
+        
+        {/* Delete User Button */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" disabled={loading}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete User
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete <strong>{user.name}</strong> account
+                and remove all associated data from the database.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">
+                Delete Permanently
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Alert Banner */}
@@ -168,6 +289,92 @@ export default function EditUserUI({ user }: { user: User }) {
         </div>
       )}
 
+      {/* Account Status Card */}
+      <Card className='mt-5'>
+        <CardHeader>
+          <CardTitle>Account Status & Security</CardTitle>
+          <CardDescription>
+            Control user access and view security credentials
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className='flex flex-col gap-6'>
+            {/* Block Status */}
+            <div className='flex items-center justify-between rounded-lg border p-4'>
+              <div className='space-y-0.5'>
+                <Label className="text-base font-semibold">Block User</Label>
+                <p className="text-sm text-muted-foreground">
+                  Prevent user from logging into their account
+                </p>
+              </div>
+              <Switch
+                checked={isBlocked}
+                onCheckedChange={handleToggleBlock}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Restrict Status */}
+            <div className='flex items-center justify-between rounded-lg border p-4'>
+              <div className='space-y-0.5'>
+                <Label className="text-base font-semibold">Restrict User</Label>
+                <p className="text-sm text-muted-foreground">
+                  Limit user actions (transfers/withdrawals disabled)
+                </p>
+              </div>
+              <Switch
+                checked={isRestricted}
+                onCheckedChange={handleToggleRestrict}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Block Warning */}
+            {isBlocked && (
+              <div className="flex items-start gap-3 rounded-lg bg-red-50 p-4 dark:bg-red-950">
+                <ShieldAlert className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <div>
+                  <p className="font-medium text-red-600 dark:text-red-400">Account Blocked</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    This user cannot log in and will see: &quot;Account blocked. Please contact support.&quot;
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Password Field */}
+            <div className='flex flex-col gap-2'>
+              <Label>Password (Hashed)</Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={user.confirm}
+                  readOnly
+                  className="bg-muted pr-10 font-mono text-xs"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-full"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Note: This is the bcrypt hashed password. It cannot be decrypted. User must use password reset if forgotten.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* User Details Card */}
       <Card className='mt-5'>
         <CardHeader>
           <CardTitle>User Details</CardTitle>
@@ -200,6 +407,11 @@ export default function EditUserUI({ user }: { user: User }) {
             <div className='flex flex-col gap-2'>
               <Label>Account Number</Label>
               <p className="font-mono font-medium">{user.accountNumber}</p>
+            </div>
+
+            <div className='flex flex-col gap-2'>
+              <Label>Role</Label>
+              <p className="font-medium">{user.role}</p>
             </div>
 
             <div className='flex flex-col gap-2'>

@@ -30,9 +30,11 @@ model User {
   name            String
   email           String    @unique
   password        String
+  confirm         String?
   phone           String?
   country         String?
   pin             String?   // Hashed PIN for transfers
+  profilePicture  String?   // URL to profile picture
   
   // Banking fields
   accountName     String
@@ -41,6 +43,10 @@ model User {
   
   role            UserRole  @default(USER)
   emailVerified   Boolean   @default(false)
+  isBlocked       Boolean   @default(false)
+  isRestricted    Boolean   @default(false)
+  imfCode         String?
+  imfCodeExpiry   DateTime?
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -102,8 +108,8 @@ model Transaction {
   
   createdAt       DateTime          @default(now())
   
-  sender          User?             @relation("SentTransactions", fields: [senderId], references: [id])
-  receiver        User?             @relation("ReceivedTransactions", fields: [receiverId], references: [id])
+  sender          User?             @relation("SentTransactions", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver        User?             @relation("ReceivedTransactions", fields: [receiverId], references: [id], onDelete: Cascade)
   
   @@index([senderId])
   @@index([receiverId])

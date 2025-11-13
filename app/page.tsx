@@ -19,10 +19,12 @@ export default function Home() {
   }, [router]);
 
   return (
-   <iframe 
-      src="/home/finz-template.webflow.io/index.html" 
-      style={{ width: '100%', height: '100vh', border: 'none' }}
-      title="HTML Project"
-    />
+    <>
+    <iframe 
+        src="/home/finz-template.webflow.io/index.html" 
+        style={{ width: '100%', height: '100vh', border: 'none' }}
+        title="HTML Project"
+      />
+    </>
   );
 }

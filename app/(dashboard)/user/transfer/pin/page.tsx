@@ -8,9 +8,35 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Lock, Eye, EyeOff, ArrowLeft } from "lucide-react"
 
+// 1. ADD BANKS ARRAY HERE
+const banks = [
+  { value: "chase-bank", label: "Chase Bank" },
+  { value: "bank-of-america", label: "Bank of America" },
+  { value: "wells-fargo", label: "Wells Fargo" },
+  { value: "citibank", label: "Citibank" },
+  { value: "us-bank", label: "U.S. Bank" },
+  { value: "pnc-bank", label: "PNC Bank" },
+  { value: "capital-one", label: "Capital One" },
+  { value: "truist-bank", label: "Truist Bank" },
+  { value: "td-bank", label: "TD Bank" },
+  { value: "ally-bank", label: "Ally Bank" },
+  { value: "barclays", label: "Barclays" },
+  { value: "hsbc-uk", label: "HSBC UK" },
+  { value: "lloyds-bank", label: "Lloyds Bank" },
+  { value: "natwest", label: "NatWest" },
+  { value: "santander-uk", label: "Santander UK" },
+  { value: "tsb-bank", label: "TSB Bank" },
+  { value: "monzo-bank", label: "Monzo Bank" },
+  { value: "starling-bank", label: "Starling Bank" },
+  { value: "metro-bank", label: "Metro Bank" },
+  { value: "revolut", label: "Revolut" },
+];
+
+// 2. UPDATE INTERFACE TO INCLUDE BANK
 interface TransferData {
+  recipientName: string;
   receiverAccountNumber: string;
-  accountNumber: string;
+  bank: string; // ADD THIS LINE
   amount: string;
   description?: string;
 }
@@ -27,11 +53,17 @@ export default function PinConfirmationPage() {
     // Get transfer data from sessionStorage
     const data = sessionStorage.getItem("transferData")
     if (!data) {
-      router.push("/dashboard/transfer")
+      router.push("/user/transfer")
       return
     }
     setTransferData(JSON.parse(data))
   }, [router])
+
+  // 3. ADD HELPER FUNCTION HERE
+  const getBankLabel = (bankValue: string): string => {
+    const bank = banks.find(b => b.value === bankValue);
+    return bank ? bank.label : bankValue;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,12 +71,12 @@ export default function PinConfirmationPage() {
     setLoading(true)
 
     if (!transferData) {
-    setError("Transfer data not found")
-    setLoading(false)
-    return
-  }
+      setError("Transfer data not found")
+      setLoading(false)
+      return
+    }
 
-    if (!pin || pin.length < 4) {
+    if (!pin || pin.length !== 4) {
       setError("Please enter your 4 digit PIN")
       setLoading(false)
       return
@@ -63,6 +95,13 @@ export default function PinConfirmationPage() {
       })
 
       const data = await response.json()
+
+      // Check if account is restricted
+      if (response.status === 403 && data.error === "ACCOUNT_RESTRICTED") {
+        // Redirect to IMF verification page
+        router.push("/user/transfer/imf-verification")
+        return
+      }
 
       if (!response.ok) {
         setError(data.error || "Transfer failed")
@@ -110,8 +149,17 @@ export default function PinConfirmationPage() {
             <span className="font-medium">Transfer</span>
           </div>
           <div className="flex justify-between">
+            <span className="text-muted-foreground">Recipient</span>
+            <span className="font-medium">{transferData.recipientName}</span>
+          </div>
+          {/* 4. ADD THIS NEW BANK DISPLAY */}
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Bank</span>
+            <span className="font-medium">{getBankLabel(transferData.bank)}</span>
+          </div>
+          <div className="flex justify-between">
             <span className="text-muted-foreground">Account Number</span>
-            <span className="font-medium font-mono">{transferData.accountNumber}</span>
+            <span className="font-medium font-mono">{transferData.receiverAccountNumber}</span>
           </div>
           {transferData.description && (
             <div className="flex justify-between">
@@ -143,8 +191,8 @@ export default function PinConfirmationPage() {
                 <Input
                   id="pin"
                   type={showPin ? "text" : "password"}
-                  placeholder="Enter 4-6 digit PIN"
-                  maxLength={6}
+                  placeholder="Enter 4 digit PIN"
+                  maxLength={4}
                   value={pin}
                   onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                   className="pr-10"
@@ -179,7 +227,7 @@ export default function PinConfirmationPage() {
               <Button
                 type="submit"
                 className="flex-1"
-                disabled={pin.length < 4 || loading}
+                disabled={pin.length !== 4 || loading}
               >
                 {loading ? "Confirming..." : "Confirm Transaction"}
               </Button>

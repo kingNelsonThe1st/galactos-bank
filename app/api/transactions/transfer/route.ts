@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { receiverAccountNumber, recipientName, amount, pin, description } = await request.json();
+    const { receiverAccountNumber, amount, pin, description } = await request.json();
 
     // Validate inputs
     if (!receiverAccountNumber || !amount || !pin) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get sender and validate PIN OUTSIDE the transaction
+    // STEP 1: Get sender and check restriction status
     const sender = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
         accountNumber: true,
         balance: true,
         pin: true,
+        isRestricted: true,
       }
     });
 
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Sender not found" },
         { status: 404 }
+      );
+    }
+
+    // CRITICAL: Check if account is restricted BEFORE allowing transfer
+    if (sender.isRestricted) {
+      return NextResponse.json(
+        { error: "ACCOUNT_RESTRICTED" },
+        { status: 403 }
       );
     }
 
@@ -74,54 +83,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Execute transaction - only update sender's balance
-    const result = await prisma.$transaction(async (tx) => {
-      // Calculate new balance
-      const newSenderBalance = senderBalance - transferAmount;
-
-      // Update sender balance only
-      await tx.user.update({
-        where: { id: sender.id },
-        data: { balance: new Decimal(newSenderBalance) },
-      });
-
-      // Create transaction record
-      const txnRef = generateTransactionRef();
-      const transaction = await tx.transaction.create({
-        data: {
-          reference: txnRef,
-          amount: new Decimal(transferAmount),
-          type: "TRANSFER",
-          status: "COMPLETED",
-          description: description || `Transfer to ${receiverAccountNumber}`,
-          senderId: sender.id,
-          senderName: sender.name,
-          senderAccount: sender.accountNumber,
-          receiverAccount: receiverAccountNumber,
-          balanceBefore: sender.balance,
-          balanceAfter: new Decimal(newSenderBalance),
-        },
-      });
-
-      return {
-        transaction,
-        newBalance: newSenderBalance,
-      };
-    }, {
-      maxWait: 5000,
-      timeout: 10000,
+    // Create pending transaction (no balance update yet)
+    const txnRef = generateTransactionRef();
+    const transaction = await prisma.transaction.create({
+      data: {
+        reference: txnRef,
+        amount: new Decimal(transferAmount),
+        type: "TRANSFER",
+        status: "PENDING",
+        description: description || `Transfer to ${receiverAccountNumber}`,
+        senderId: sender.id,
+        senderName: sender.name,
+        senderAccount: sender.accountNumber,
+        receiverAccount: receiverAccountNumber,
+        balanceBefore: sender.balance,
+        balanceAfter: sender.balance,
+      },
     });
 
     return NextResponse.json({
       success: true,
-      message: "Transfer successful",
+      message: "Transfer submitted for approval",
       transaction: {
-        reference: result.transaction.reference,
-        date: result.transaction.createdAt.toISOString(),
-        receiver: recipientName, // Since we're not checking receiver, use placeholder
+        reference: transaction.reference,
+        date: transaction.createdAt.toISOString(),
+        receiver: "Pending Verification",
         receiverAccount: receiverAccountNumber,
         amount: transferAmount.toString(),
-        balanceAfter: result.newBalance.toString(),
+        balanceAfter: senderBalance.toString(),
+        status: "PENDING",
       }
     });
   } catch (error: unknown) {

@@ -34,7 +34,7 @@ export default function WithdrawPage() {
            } else {
              setError("Failed to load balance")
            }
-         } catch (err) {
+         } catch {
            setError("Error loading balance")
          } finally {
            setBalanceLoading(false)

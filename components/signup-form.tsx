@@ -1,7 +1,7 @@
 "use client"
  
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+import { CheckIcon, ChevronsUpDownIcon, Eye, EyeOff } from "lucide-react" // Added Eye icons
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -68,6 +68,8 @@ export function SignupForm({
   const [open, setOpen] = React.useState(false)
   
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // New state for confirm password visibility
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -77,6 +79,7 @@ export function SignupForm({
     name: "",
     email: "",
     password: "",
+    confirm: "",
     phone: "",
     country: "",
     pin: "",
@@ -239,13 +242,61 @@ export function SignupForm({
                 <Field className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" name="password" type="password" value={formData.password} onChange={handleChange} placeholder="••••••••" required minLength={8} />
+                    <div className="relative">
+                      <Input 
+                        id="password" 
+                        name="password" 
+                        type={showPassword ? "text" : "password"} 
+                        value={formData.password} 
+                        onChange={handleChange} 
+                        placeholder="••••••••" 
+                        required 
+                        minLength={8}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="confirmPassword">
                       Confirm Password
                     </FieldLabel>
-                    <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={8} />
+                    <div className="relative">
+                      <Input 
+                        id="confirmPassword confirm"
+                        name="confirm"
+                        type={showConfirmPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        value={confirmPassword} 
+                        onChange={(e) => setConfirmPassword(e.target.value)} 
+                        required 
+                        minLength={8}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                        aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </Field>
                 </Field>
                 <FieldDescription>

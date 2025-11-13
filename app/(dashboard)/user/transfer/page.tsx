@@ -1,23 +1,62 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation"
+import { Check, ChevronsUpDown } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import { cn } from "@/lib/utils"
 
+const banks = [
+  { value: "chase-bank", label: "Chase Bank" },
+  { value: "bank-of-america", label: "Bank of America" },
+  { value: "wells-fargo", label: "Wells Fargo" },
+  { value: "citibank", label: "Citibank" },
+  { value: "us-bank", label: "U.S. Bank" },
+  { value: "pnc-bank", label: "PNC Bank" },
+  { value: "capital-one", label: "Capital One" },
+  { value: "truist-bank", label: "Truist Bank" },
+  { value: "td-bank", label: "TD Bank" },
+  { value: "ally-bank", label: "Ally Bank" },
+  { value: "barclays", label: "Barclays" },
+  { value: "hsbc-uk", label: "HSBC UK" },
+  { value: "lloyds-bank", label: "Lloyds Bank" },
+  { value: "natwest", label: "NatWest" },
+  { value: "santander-uk", label: "Santander UK" },
+  { value: "tsb-bank", label: "TSB Bank" },
+  { value: "monzo-bank", label: "Monzo Bank" },
+  { value: "starling-bank", label: "Starling Bank" },
+  { value: "metro-bank", label: "Metro Bank" },
+  { value: "revolut", label: "Revolut" },
+]
 
 export default function TransferPage() {
-  const router = useRouter();
+  const router = useRouter()
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const [currentBalance, setCurrentBalance] = useState<number | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(true)
+  const [open, setOpen] = useState(false)
   const [formData, setFormData] = useState({
     recipientName: "",
     receiverAccountNumber: "",
+    bank: "",
     amount: "",
     description: ""
   })
@@ -34,7 +73,7 @@ export default function TransferPage() {
         } else {
           setError("Failed to load balance")
         }
-      } catch (err) {
+      } catch {
         setError("Error loading balance")
       } finally {
         setBalanceLoading(false)
@@ -48,7 +87,7 @@ export default function TransferPage() {
     e.preventDefault()
     setError("")
 
-    if (!formData.recipientName || !formData.receiverAccountNumber || !formData.amount) {
+    if (!formData.recipientName || !formData.receiverAccountNumber || !formData.bank || !formData.amount) {
       setError("Please fill in all required fields.")
       return
     }
@@ -144,6 +183,58 @@ export default function TransferPage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bank">Select Bank</Label>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                  >
+                    {formData.bank
+                      ? banks.find((b) => b.value === formData.bank)?.label
+                      : "Select bank..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search bank..." />
+                    <CommandList>
+                      <CommandEmpty>No bank found.</CommandEmpty>
+                      <CommandGroup>
+                        {banks.map((bank) => (
+                          <CommandItem
+                            key={bank.value}
+                            value={bank.value}
+                            onSelect={(currentValue) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                bank: currentValue === prev.bank ? "" : currentValue,
+                              }))
+                              setOpen(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.bank === bank.value
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {bank.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">

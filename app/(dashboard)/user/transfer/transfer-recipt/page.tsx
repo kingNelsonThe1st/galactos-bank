@@ -28,7 +28,7 @@ export default function TransactionReceiptPage() {
   useEffect(() => {
     const result = sessionStorage.getItem("transferResult")
     if (!result) {
-      router.push("/dashboard/transfer")
+      router.push("/user/transfer")
       return
     }
     setTransferResult(JSON.parse(result))
@@ -90,7 +90,7 @@ Status: COMPLETED
 
   const handleBackToDashboard = () => {
     sessionStorage.removeItem("transferResult")
-    router.push("/dashboard")
+    router.push("/user")
   }
 
   if (loading) {

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ProfilePictureUpload from "./components/ProfilePictureUpload"
 
 export default async function ProfilePage() {
   const session = await getSession()
@@ -25,6 +25,7 @@ export default async function ProfilePage() {
       accountNumber: true,
       balance: true,
       emailVerified: true,
+      profilePicture: true,
       createdAt: true,
     },
   })
@@ -60,6 +61,8 @@ export default async function ProfilePage() {
     }),
     country: user.country || '',
     emailVerified: user.emailVerified,
+    profilePicture: user.profilePicture,
+    initials,
   }
 
   return (
@@ -73,23 +76,18 @@ export default async function ProfilePage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <Avatar className="h-20 w-20">
-              <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-              <AvatarFallback className="text-2xl">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-2xl">
-                {user.name}
-              </CardTitle>
-              <CardDescription>
-                Member since {userProfile.dateJoined}
-              </CardDescription>
-            </div>
-          </div>
+          <CardTitle>Profile Picture</CardTitle>
+          <CardDescription>
+            Upload or update your profile picture
+          </CardDescription>
         </CardHeader>
+        <CardContent>
+          <ProfilePictureUpload 
+            currentPicture={userProfile.profilePicture}
+            initials={userProfile.initials}
+            userName={user.name}
+          />
+        </CardContent>
       </Card>
 
       <Card>
@@ -215,4 +213,4 @@ export default async function ProfilePage() {
       </Card>
     </div>
   )
-}
+} 

@@ -57,6 +57,11 @@ const adminData = {
       icon: IconReport,
     },
     {
+      name: "Pending Txns",
+      url: "/admin/transactions/pending",
+      icon: IconReport,
+    },
+    {
       name: "Transfers",
       url: "/admin/transfers",
       icon: IconFileWord,

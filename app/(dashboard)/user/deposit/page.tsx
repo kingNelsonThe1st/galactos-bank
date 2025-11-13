@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { IconCreditCard, IconBuildingBank, IconCheck } from "@tabler/icons-react"
+import { IconCreditCard, IconBuildingBank } from "@tabler/icons-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function DepositPage() {
+  const router = useRouter()
   const [isDepositing, setIsDepositing] = useState(false)
-  const [depositSuccess, setDepositSuccess] = useState(false)
   const [error, setError] = useState("")
   const [currentBalance, setCurrentBalance] = useState<number | null>(null)
   const [balanceLoading, setBalanceLoading] = useState(true)
@@ -28,60 +29,112 @@ export default function DepositPage() {
     amount: ""
   })
 
-   // Fetch user balance on component mount
-   useEffect(() => {
-     const fetchBalance = async () => {
-       try {
-         const response = await fetch('/api/user/balance')
-         const data = await response.json()
-         
-         if (response.ok) {
-           setCurrentBalance(data.balance)
-         } else {
-           setError("Failed to load balance")
-         }
-       } catch (err) {
-         setError("Error loading balance")
-       } finally {
-         setBalanceLoading(false)
-       }
-     }
- 
-     fetchBalance()
-   }, [])
+  // Fetch user balance on component mount
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const response = await fetch('/api/user/balance')
+        const data = await response.json()
+        
+        if (response.ok) {
+          setCurrentBalance(data.balance)
+        } else {
+          setError("Failed to load balance")
+        }
+      } catch {
+        setError("Error loading balance")
+      } finally {
+        setBalanceLoading(false)
+      }
+    }
 
-  const handleCardDeposit = () => {
+    fetchBalance()
+  }, [])
+
+  const handleCardDeposit = async () => {
+    setError("")
+    
+    if (!cardData.amount || parseFloat(cardData.amount) <= 0) {
+      setError("Please enter a valid amount")
+      return
+    }
+
+    if (!cardData.cardNumber || !cardData.cardName || !cardData.expiryDate || !cardData.cvv) {
+      setError("Please fill in all card details")
+      return
+    }
+
     setIsDepositing(true)
-    setTimeout(() => {
-      setIsDepositing(false)
-      setDepositSuccess(true)
-      setTimeout(() => {
-        setDepositSuccess(false)
-        setCardData({
-          cardNumber: "",
-          cardName: "",
-          expiryDate: "",
-          cvv: "",
-          amount: ""
+
+    try {
+      const response = await fetch('/api/transactions/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: cardData.amount,
+          method: 'Card',
+          paymentDetails: `Card ending in ${cardData.cardNumber.slice(-4)}`
         })
-      }, 3000)
-    }, 2000)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Deposit failed')
+        setIsDepositing(false)
+        return
+      }
+
+      // Store deposit result and redirect to success page
+      sessionStorage.setItem("depositResult", JSON.stringify(data))
+      router.push('/user/deposit/success')
+    } catch {
+      setError('Network error. Please try again.')
+      setIsDepositing(false)
+    }
   }
 
-  const handleBankDeposit = () => {
+  const handleBankDeposit = async () => {
+    setError("")
+    
+    if (!bankData.amount || parseFloat(bankData.amount) <= 0) {
+      setError("Please enter a valid amount")
+      return
+    }
+
+    if (!bankData.accountNumber || !bankData.routingNumber) {
+      setError("Please fill in all bank details")
+      return
+    }
+
     setIsDepositing(true)
-    setTimeout(() => {
-      setIsDepositing(false)
-      setDepositSuccess(true)
-      setTimeout(() => {
-        setDepositSuccess(false)
-        setBankData({
-          accountNumber: "",
-          routingNumber: "",
-          amount: ""
+
+    try {
+      const response = await fetch('/api/transactions/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: bankData.amount,
+          method: 'Bank Transfer',
+          paymentDetails: `Account: ${bankData.accountNumber}`
         })
-      }, 3000)
-    }, 2000)
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Deposit failed')
+        setIsDepositing(false)
+        return
+      }
+
+      // Store deposit result and redirect to success page
+      sessionStorage.setItem("depositResult", JSON.stringify(data))
+      router.push('/user/deposit/success')
+    } catch {
+      setError('Network error. Please try again.')
+      setIsDepositing(false)
+    }
   }
 
   return (
@@ -93,11 +146,10 @@ export default function DepositPage() {
         </p>
       </div>
 
-      {depositSuccess && (
-        <Alert className="border-green-600 bg-green-50 dark:bg-green-950">
-          <IconCheck className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-600">
-            Deposit processed successfully! Funds will be available shortly.
+      {error && (
+        <Alert className="border-red-600 bg-red-50 dark:bg-red-950">
+          <AlertDescription className="text-red-600">
+            {error}
           </AlertDescription>
         </Alert>
       )}
@@ -147,7 +199,8 @@ export default function DepositPage() {
                   id="cardNumber"
                   placeholder="1234 5678 9012 3456"
                   value={cardData.cardNumber}
-                  onChange={(e) => setCardData({ ...cardData, cardNumber: e.target.value })}
+                  onChange={(e) => setCardData({ ...cardData, cardNumber: e.target.value.replace(/\D/g, '') })}
+                  maxLength={16}
                 />
               </div>
 
@@ -169,6 +222,7 @@ export default function DepositPage() {
                     placeholder="MM/YY"
                     value={cardData.expiryDate}
                     onChange={(e) => setCardData({ ...cardData, expiryDate: e.target.value })}
+                    maxLength={5}
                   />
                 </div>
                 <div className="space-y-2">
@@ -178,7 +232,7 @@ export default function DepositPage() {
                     placeholder="123"
                     maxLength={3}
                     value={cardData.cvv}
-                    onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+                    onChange={(e) => setCardData({ ...cardData, cvv: e.target.value.replace(/\D/g, '') })}
                   />
                 </div>
               </div>
@@ -206,7 +260,7 @@ export default function DepositPage() {
                 className="w-full"
                 disabled={isDepositing}
               >
-                {isDepositing ? "Processing..." : "Deposit Funds"}
+                {isDepositing ? "Processing..." : "Submit Deposit Request"}
               </Button>
             </CardContent>
           </Card>
@@ -261,7 +315,7 @@ export default function DepositPage() {
 
               <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-950">
                 <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Bank transfers may take 1-3 business days to process
+                  Deposits require admin approval and may take 1-3 business days to process
                 </p>
               </div>
 
@@ -270,12 +324,21 @@ export default function DepositPage() {
                 className="w-full"
                 disabled={isDepositing}
               >
-                {isDepositing ? "Processing..." : "Initiate Transfer"}
+                {isDepositing ? "Processing..." : "Submit Deposit Request"}
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Card className="border-yellow-300 bg-yellow-50 dark:bg-yellow-900">
+        <CardContent className="pt-6">
+          <p className="text-sm text-yellow-800 dark:text-yellow-300">
+            <strong>Approval Required:</strong> All deposit requests must be reviewed and approved by an administrator. 
+            You will be notified once your deposit is processed.
+          </p>
+        </CardContent>
+      </Card>
 
       <Card className="border-gray-300 bg-gray-50 dark:bg-gray-900">
         <CardContent className="pt-6">
