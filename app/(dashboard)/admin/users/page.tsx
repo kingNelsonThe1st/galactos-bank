@@ -124,11 +124,7 @@ export default async function UsersPage() {
                               Edit User
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/users/${user.id}`} className="cursor-pointer">
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
+                          
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

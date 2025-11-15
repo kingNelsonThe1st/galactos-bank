@@ -127,7 +127,7 @@ model Deposit {
   adminEmail    String?  // Which admin approved it
   createdAt     DateTime @default(now())
   
-  user          User     @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   @@index([userId])
   @@index([createdAt])

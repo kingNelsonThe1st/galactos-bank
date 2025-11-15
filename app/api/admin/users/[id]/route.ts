@@ -89,7 +89,7 @@ export async function PATCH(
   }
 }
 
-// DELETE - Delete user
+// DELETE - Delete user (with cascade delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -121,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    // Prevent deleting admin accounts (safety check)
+    // Prevent deleting admin accounts
     if (user.role === "ADMIN") {
       return NextResponse.json(
         { error: "Cannot delete admin accounts" },
@@ -137,27 +137,13 @@ export async function DELETE(
       );
     }
 
-    // Delete user and all related data in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Delete all transactions where user is sender or receiver
-      await tx.transaction.deleteMany({
-        where: {
-          OR: [
-            { senderId: user.id },
-            { receiverId: user.id }
-          ]
-        }
-      });
-
-      // Delete user sessions
-      await tx.session.deleteMany({
-        where: { userId: user.id }
-      });
-
-      // Finally, delete the user
-      await tx.user.delete({
-        where: { id }
-      });
+    // Delete user - cascade will automatically delete:
+    // - Sessions
+    // - VerificationTokens
+    // - Transactions (sent & received)
+    // - Deposits
+    await prisma.user.delete({
+      where: { id }
     });
 
     return NextResponse.json({
@@ -167,14 +153,6 @@ export async function DELETE(
 
   } catch (error: unknown) {
     console.error("Delete user error:", error);
-    
-    // Check if it's a foreign key constraint error
-    if (error instanceof Error && error.message.includes("Foreign key constraint")) {
-      return NextResponse.json(
-        { error: "Cannot delete user with existing transactions. Please delete transactions first." },
-        { status: 400 }
-      );
-    }
     
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to delete user" },
