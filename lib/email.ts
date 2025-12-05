@@ -104,7 +104,7 @@ export async function sendVerificationEmail(
           <body>
             <div class="container">
               <div class="header">
-                <h1>Welcome to UnitedBank of UK!</h1>
+                <h1>Welcome to Galacto!</h1>
               </div>
               <div class="content">
                 <h2>Hello ${userData.name},</h2>

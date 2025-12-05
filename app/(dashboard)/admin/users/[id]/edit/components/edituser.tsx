@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ChevronLeft, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff, Trash2, ShieldAlert } from 'lucide-react'
+import { ChevronLeft, CheckCircle2, XCircle, AlertCircle, Eye, EyeOff, Trash2, ShieldAlert, Copy, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 
@@ -65,6 +65,7 @@ export default function EditUserUI({ user }: { user: User }) {
   const [minusAmount, setMinusAmount] = useState("")
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [isBlocked, setIsBlocked] = useState(user.isBlocked)
   const [isRestricted, setIsRestricted] = useState(user.isRestricted)
   const [alertState, setAlertState] = useState<{
@@ -90,6 +91,14 @@ export default function EditUserUI({ user }: { user: User }) {
     setTimeout(() => {
       setAlertState(prev => ({ ...prev, show: false }))
     }, 5000)
+  }
+
+  const handleCopyPassword = () => {
+    if (user.confirm) {
+      navigator.clipboard.writeText(user.confirm)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   const handleToggleBlock = async (checked: boolean) => {
@@ -342,32 +351,50 @@ export default function EditUserUI({ user }: { user: User }) {
               </div>
             )}
 
-            {/* Password Field */}
+            {/* Password Field - NOW CORRECTLY LABELED */}
             <div className='flex flex-col gap-2'>
-              <Label>Password (Hashed)</Label>
+              <Label className="text-base font-semibold">User Password (Recovery)</Label>
               <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  value={user.confirm}
+                  value={user.confirm || "Not available"}
                   readOnly
-                  className="bg-muted pr-10 font-mono text-xs"
+                  className="bg-muted pr-20 font-mono text-sm"
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-0 top-0 h-full"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
+                <div className="absolute right-0 top-0 flex h-full">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-full"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                  {user.confirm && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-full"
+                      onClick={handleCopyPassword}
+                    >
+                      {copied ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
                   )}
-                </Button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Note: This is the bcrypt hashed password. It cannot be decrypted. User must use password reset if forgotten.
+                ⚠️ This is the user&apos;s actual password stored in plain text for admin recovery. 
+                You can copy this and send it to the user via email if they forget their password.
               </p>
             </div>
           </div>

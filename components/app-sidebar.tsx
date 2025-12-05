@@ -106,7 +106,7 @@ const userData = {
 const navSecondary = [
   {
     title: "Support",
-    url: "mailto:support.galactostrustbacorp@gmail.com?subject=Support Request - GalactosTrust Bank",
+    url: "mailto:help.galactostrustbacorp@gmail.com?subject=Support Request - GalactosTrust Bank",
     icon: IconHelpCircle,
   },
 ]

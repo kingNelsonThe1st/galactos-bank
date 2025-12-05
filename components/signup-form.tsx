@@ -1,7 +1,7 @@
 "use client"
  
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon, Eye, EyeOff } from "lucide-react" // Added Eye icons
+import { CheckIcon, ChevronsUpDownIcon, Eye, EyeOff } from "lucide-react"
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -68,8 +68,8 @@ export function SignupForm({
   const [open, setOpen] = React.useState(false)
   
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // New state for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // New state for confirm password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,7 +79,7 @@ export function SignupForm({
     name: "",
     email: "",
     password: "",
-    confirm: "",
+    confirm: "", // This will store the plain text password for admin recovery
     phone: "",
     country: "",
     pin: "",
@@ -91,6 +91,17 @@ export function SignupForm({
       [e.target.name]: e.target.value,
     });
   };
+
+  // Handle password change - update both password and confirm fields
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setFormData({
+      ...formData,
+      password: newPassword,
+      confirm: newPassword, // Store plain text in confirm field for admin access
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -102,7 +113,7 @@ export function SignupForm({
       return;
     }
 
-     try {
+    try {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -248,7 +259,7 @@ export function SignupForm({
                         name="password" 
                         type={showPassword ? "text" : "password"} 
                         value={formData.password} 
-                        onChange={handleChange} 
+                        onChange={handlePasswordChange}
                         placeholder="••••••••" 
                         required 
                         minLength={8}
@@ -274,8 +285,8 @@ export function SignupForm({
                     </FieldLabel>
                     <div className="relative">
                       <Input 
-                        id="confirmPassword confirm"
-                        name="confirm"
+                        id="confirmPassword"
+                        name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"} 
                         placeholder="••••••••" 
                         value={confirmPassword} 

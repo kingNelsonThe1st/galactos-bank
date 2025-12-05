@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const accountName = name.toUpperCase(); // Format account name
 
     // Determine role based on email
-    const adminEmail = process.env.ADMIN_EMAIL || "nelsonokonkwo218@gmail.com";
+    const adminEmail = process.env.ADMIN_EMAIL || "richarddmmiles@gmail.com";
     const role = email === adminEmail ? "ADMIN" : "USER";
 
     console.log("👤 Creating user with role:", role);
