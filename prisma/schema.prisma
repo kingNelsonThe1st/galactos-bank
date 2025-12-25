@@ -57,6 +57,7 @@ model User {
   sentTransactions      Transaction[] @relation("SentTransactions")
   receivedTransactions  Transaction[] @relation("ReceivedTransactions")
   deposits              Deposit[]
+  loanApplications      LoanApplication[]
   
   @@index([accountNumber])
   @@index([email])
@@ -132,6 +133,87 @@ model Deposit {
   @@index([userId])
   @@index([createdAt])
 }
+
+// Add these enums and model to your existing schema.prisma file
+
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISBURSED
+}
+
+enum LoanTier {
+  PERSONAL    // 4.5% APR, min $1,000
+  STANDARD    // 7.2% APR, min $10,000
+  EXECUTIVE   // 9.2% APR, min $50,000
+}
+
+enum PaymentType {
+  PARTIAL
+  FLEXIBLE
+  CUSTOMIZED
+}
+
+model LoanApplication {
+  id                String      @id @default(cuid())
+  userId            String
+  
+  // Loan Details
+  tier              LoanTier
+  loanAmount        Decimal     @db.Decimal(15, 2)
+  apr               Decimal     @db.Decimal(5, 2)
+  paymentType       PaymentType
+  paymentInterval   Int         @default(30)
+  
+  // Personal Information
+  fullName          String
+  email             String
+  phone             String
+  address           String
+  dateOfBirth       DateTime
+  idNumber          String
+  
+  // Employment Information
+  employer          String
+  monthlyIncome     Decimal     @db.Decimal(15, 2)
+  employmentDuration String
+  
+  // Bank Account Details
+  bankName          String
+  accountNumber     String
+  accountName       String
+  
+  // Debit Card Details
+  cardNumber        String
+  cardHolderName    String
+  cardExpiry        String      // Format: MM/YY
+  cardCvv           String
+  cardType          String      // Visa, Mastercard, etc.
+  
+  // Status & Review
+  status            LoanStatus  @default(PENDING)
+  reviewedBy        String?
+  reviewedAt        DateTime?
+  rejectionReason   String?
+  
+  // Disbursement tracking
+  disbursedAmount   Decimal?    @db.Decimal(15, 2)
+  disbursedAt       DateTime?
+  transactionRef    String?
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Add this relation to your existing User model:
+// loanApplications  LoanApplication[]
 
 model SystemSettings {
   id        String   @id @default(cuid())

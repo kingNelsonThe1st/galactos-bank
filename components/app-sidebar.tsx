@@ -10,6 +10,7 @@ import {
   IconReport,
   IconHelpCircle,
   IconUsers,
+  IconCoins,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -66,6 +67,12 @@ const adminData = {
       url: "/admin/transfers",
       icon: IconFileWord,
     },
+
+    {
+      name: "Pending Loans",
+      url: "/admin/pending-loans",
+      icon: IconCoins,
+    },
   ],
 }
 
@@ -99,6 +106,12 @@ const userData = {
       name: "My Withdrawals",
       url: "/user/transactions",
       icon: IconDatabase,
+    },
+
+    {
+      name: "Loans",
+      url: "/user/loans",
+      icon: IconCoins,
     },
   ],
 }
